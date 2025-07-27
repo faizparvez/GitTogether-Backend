@@ -1,0 +1,2 @@
+- We group together similar api's and form a different express router for it.
+- The 
