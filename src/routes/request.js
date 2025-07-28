@@ -61,7 +61,7 @@ requestRouter.post("/request/send/:status/:toUserId",
 requestRouter.post("request/received/:status/:reqId",
     userAuth,
     async (req, res) => {
-        
+
     }
 )
 
