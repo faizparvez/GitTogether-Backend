@@ -58,10 +58,41 @@ requestRouter.post("/request/send/:status/:toUserId",
     }
 })
 
-requestRouter.post("request/received/:status/:reqId",
+requestRouter.post("/request/review/:status/:reqId",
     userAuth,
     async (req, res) => {
+        try{
+            const loggedinuser = req.user;
+                        
+// check 1 : validate the "status" & "reqId" present in the route, i.e route parameters ( req.params )
+            const { status, reqId } = req.params;
+            if(!["accepted","rejected"].includes(status)){
+                throw new Error("Invalid Connection Request");
+            }
+            
+// check 2 : we'll see all the requests in which the toUserId = ID OF THE LOGGEDIN USER
+// check 3 : the status OF THE PENDING REQUEST should be interested
+            const request = await Request.findOne({
+                _id: reqId,
+                toUserId: loggedinuser._id,
+                status: "interested"
+            });
+            
+            if(!request){
+                throw new Error("Invalid Connection Request");
+            }
 
+            request.status = status;
+            const data = await request.save();
+
+            res.json({
+                message:`Connection request ${status}`,
+                data: request
+            });
+        }
+        catch(err){
+            res.status(400).send("ERROR: "+err.message);
+        }
     }
 )
 
