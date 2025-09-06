@@ -5,15 +5,16 @@ const {User} = require("../models/user");
 const userAuth = async (req, res, next)=>{
 try{
   const cookies = req.cookies;
-  console.log(cookies);
+  // console.log(cookies);
 
   const { token } = cookies;
   if(!token){
-    throw new Error("User not loggedin");
+    // 401 -> denotes the user is unauthorized
+    res.status(401).send("Please Login");
   }
 
   const decodedMessage = await jwt.verify(token, "28@ugust22");
-  console.log(decodedMessage);
+  // console.log(decodedMessage);
 
   const {_id}=decodedMessage;
   const user=await User.findById(_id);
