@@ -5,7 +5,6 @@ const bcrypt = require("bcrypt");
 const { validateSignupData } = require("../utils/validation");
 const jwt = require("jsonwebtoken");
 
-
 // validateData => encrypt password => create an instance => store in DB
 authRouter.post("/signup", async (req, res) => {
   try {
@@ -21,8 +20,16 @@ authRouter.post("/signup", async (req, res) => {
       password: passwordHash,
     });
 
-    await user.save();
-    res.send("User added successfully");
+    const savedUser = await user.save();
+    const token = jwt.sign({ _id: savedUser._id }, "28@ugust22", {
+      expiresIn: "1h",
+    });
+
+    res.cookie("token", token, {
+      expires: new Date(Date.now() + 8 * 3600000), // cookie will be removed after 8 hours
+    });
+
+    res.json({ message: "User added successfully", data: savedUser });
   } catch (err) {
     res.status(404).send("ERROR: " + err.message);
   }
@@ -40,41 +47,35 @@ authRouter.post("/login", async (req, res) => {
 
     const ispassValid = await bcrypt.compare(password, user.password);
     if (ispassValid) {
-      
-        const token = await jwt.sign({ _id: user._id }, "28@ugust22", {
+      const token = await jwt.sign({ _id: user._id }, "28@ugust22", {
         expiresIn: "1h",
       });
-    //   console.log(token);
-      
+      //   console.log(token);
+
       res.cookie("token", token, {
         expires: new Date(Date.now() + 8 * 3600000), // cookie will be removed after 8 hours
       });
 
       // res.send("Login Successfull");
       res.send(user);
-    }
-    else{
-        throw new Error("Invalid Credentials");
+    } else {
+      throw new Error("Invalid Credentials");
     }
   } catch (err) {
     res.status(404).send("ERROR: " + err.message);
   }
 });
 
-
 // create cookie which expires now => send the response
-authRouter.post("/logout", async(req, res) => {
-  try{
-    res.cookie("token",null,{
-      expires:new Date(Date.now())
+authRouter.post("/logout", async (req, res) => {
+  try {
+    res.cookie("token", null, {
+      expires: new Date(Date.now()),
     });
     res.send("Logout Successfull");
+  } catch (err) {
+    res.status(404).send("ERROR: " + err.message);
   }
-  catch(err){
-    res.status(404).send("ERROR: "+err.message);
-  }
-})
-
-
+});
 
 module.exports = { authRouter };
