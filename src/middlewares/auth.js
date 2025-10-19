@@ -13,7 +13,7 @@ try{
     res.status(401).send("Please Login");
   }
 
-  const decodedMessage = await jwt.verify(token, "28@ugust22");
+  const decodedMessage = await jwt.verify(token, process.env.JWT_SECRET);
   // console.log(decodedMessage);
 
   const {_id}=decodedMessage;
