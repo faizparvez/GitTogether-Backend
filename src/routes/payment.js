@@ -27,7 +27,7 @@ paymentRouter.post("/payment/create", userAuth, async (req, res) => {
     });
 
     // Save it in my database
-    // console.log(order);
+    console.log(order);
 
     const payment = new Payment({
       userId: req.user._id,
@@ -77,6 +77,8 @@ paymentRouter.post("/payment/webhook", async (req, res) => {
     // Update the user as premium
     const user = await User.findOne({ _id: payment.userId });
     user.isPremium = true;
+    console.log(user);
+    console.log(payment.notes.membershipType);
     user.membershipType = payment.notes.membershipType;
     console.log("User saved");
     await user.save();
