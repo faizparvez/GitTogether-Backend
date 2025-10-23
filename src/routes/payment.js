@@ -27,7 +27,7 @@ paymentRouter.post("/payment/create", userAuth, async (req, res) => {
     });
 
     // Save it in my database
-    console.log(order);
+    // console.log(order);
 
     const payment = new Payment({
       userId: req.user._id,
