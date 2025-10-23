@@ -5,6 +5,14 @@ const bcrypt = require("bcrypt");
 const { validateSignupData } = require("../utils/validation");
 const jwt = require("jsonwebtoken");
 
+// Cookie configuration for production
+const getCookieOptions = () => ({
+  httpOnly: true,
+  secure: true,  // HTTPS only (Render provides HTTPS)
+  sameSite: 'none',  // Allow cross-domain (Vercel → Render)
+  maxAge: 8 * 60 * 60 * 1000  // 8 hours in milliseconds
+});
+
 // validateData => encrypt password => create an instance => store in DB
 authRouter.post("/signup", async (req, res) => {
   try {
@@ -22,12 +30,10 @@ authRouter.post("/signup", async (req, res) => {
 
     const savedUser = await user.save();
     const token = jwt.sign({ _id: savedUser._id }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
+      expiresIn: "8h",
     });
 
-    res.cookie("token", token, {
-      expires: new Date(Date.now() + 8 * 3600000), // cookie will be removed after 8 hours
-    });
+    res.cookie("token", token, getCookieOptions());
 
     res.json({ message: "User added successfully", data: savedUser });
   } catch (err) {
