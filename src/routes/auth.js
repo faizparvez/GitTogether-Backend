@@ -8,9 +8,9 @@ const jwt = require("jsonwebtoken");
 // Cookie configuration for production
 const getCookieOptions = () => ({
   httpOnly: true,
-  secure: true,  // HTTPS only (Render provides HTTPS)
-  sameSite: 'none',  // Allow cross-domain (Vercel → Render)
-  maxAge: 8 * 60 * 60 * 1000  // 8 hours in milliseconds
+  secure: true, // HTTPS only (Render provides HTTPS)
+  sameSite: "none", // Allow cross-domain (Vercel → Render)
+  maxAge: 8 * 60 * 60 * 1000, // 8 hours in milliseconds
 });
 
 // validateData => encrypt password => create an instance => store in DB
@@ -74,7 +74,8 @@ authRouter.post("/login", async (req, res) => {
 authRouter.post("/logout", async (req, res) => {
   try {
     res.cookie("token", null, {
-      expires: new Date(Date.now()),
+      ...getCookieOptions(),
+      maxAge: 0, // Expire immediately
     });
     res.send("Logout Successfull");
   } catch (err) {
