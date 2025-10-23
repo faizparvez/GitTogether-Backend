@@ -16,7 +16,7 @@ const { paymentRouter } = require("./routes/payment");
 
 app.use(
   cors({
-    origin: ["https://git-together-frontend.vercel.app", 'http://localhost:5173'], // your frontend origin (we are whitelisting our frontend domain name)
+    origin: ["https://git-together-frontend.vercel.app"], // your frontend origin (we are whitelisting our frontend domain name)
     credentials: true, // we can send cookies even if we are not making https request
   })
 );
