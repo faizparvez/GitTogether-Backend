@@ -12,7 +12,7 @@ const {
 paymentRouter.post("/payment/create", userAuth, async (req, res) => {
   try {
     const { membershipType } = req.body;
-    const { firstName, lastName, emailId } = req.user;
+    const { firstName, lastName, email } = req.user;
 
     const order = await razorpayInstance.orders.create({
       amount: membershipAmount[membershipType] * 100,
@@ -21,7 +21,7 @@ paymentRouter.post("/payment/create", userAuth, async (req, res) => {
       notes: {
         firstName,
         lastName,
-        emailId,
+        email,
         membershipType: membershipType,
       },
     });
@@ -73,6 +73,7 @@ paymentRouter.post("/payment/webhook", async (req, res) => {
     payment.status = paymentDetails.status;
     await payment.save();
     console.log("Payment saved", payment);
+    console.log("Payment userId type:", typeof payment.userId);
 
     // Update the user as premium
     const user = await User.findOne({ _id: payment.userId });
