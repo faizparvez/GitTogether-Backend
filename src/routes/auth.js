@@ -54,13 +54,11 @@ authRouter.post("/login", async (req, res) => {
     const ispassValid = await bcrypt.compare(password, user.password);
     if (ispassValid) {
       const token = await jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
-        expiresIn: "1h",
+        expiresIn: "8h",
       });
       //   console.log(token);
 
-      res.cookie("token", token, {
-        expires: new Date(Date.now() + 8 * 3600000), // cookie will be removed after 8 hours
-      });
+      res.cookie("token", token, getCookieOptions());
 
       // res.send("Login Successfull");
       res.send(user);
