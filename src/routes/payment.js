@@ -76,6 +76,17 @@ paymentRouter.post("/payment/webhook", async (req, res) => {
     console.log("Payment userId type:", typeof payment.userId);
 
     // Update the user as premium
+    console.log("Reached before findOne");
+    console.log("User model:", User);
+    console.log("payment.userId:", payment.userId);
+    console.log("Type:", typeof payment.userId);
+    try {
+      const user = await User.findOne({ _id: payment.userId });
+      console.log("User found:", user);
+    } catch (e) {
+      console.error("Error in findOne:", e);
+    }
+
     const user = await User.findOne({ _id: payment.userId });
     console.log(user);
     user.isPremium = true;
@@ -92,8 +103,7 @@ paymentRouter.post("/payment/webhook", async (req, res) => {
 
     // return success response to razorpay
     return res.status(200).json({ message: "Webhook received successfully" });
-  } 
-  catch (err) {
+  } catch (err) {
     return res.status(500).json({ message: err.message });
   }
 });
