@@ -72,26 +72,11 @@ paymentRouter.post("/payment/webhook", async (req, res) => {
     const payment = await Payment.findOne({ orderId: paymentDetails.order_id });
     payment.status = paymentDetails.status;
     await payment.save();
-    console.log("Payment saved", payment);
-    console.log("Payment userId type:", typeof payment.userId);
+    console.log("Payment saved");
 
     // Update the user as premium
-    console.log("Reached before findOne");
-    console.log("User model:", User);
-    console.log("payment.userId:", payment.userId);
-    console.log("Type:", typeof payment.userId);
-    try {
-      const user = await User.findOne({ _id: payment.userId });
-      console.log("User found:", user);
-    } catch (e) {
-      console.error("Error in findOne:", e);
-    }
-
     const user = await User.findOne({ _id: payment.userId });
-    console.log(user);
     user.isPremium = true;
-    console.log(user);
-    console.log(payment.notes.membershipType);
     user.membershipType = payment.notes.membershipType;
     console.log("User saved");
     await user.save();
