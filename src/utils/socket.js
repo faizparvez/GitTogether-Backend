@@ -34,6 +34,17 @@ const initializeSocket = (server) => {
 
           // Save messages to the database
           // TODO: Check if userId & targetUserId are friends
+          const existingRequest = await Request.findOne({
+            $or: [
+              // using or for more than 1 cond
+              { fromUserId: userId, toUserId: targetUserId, status: "accepted" },
+              { fromUserId: targetUserId, toUserId: userId, status: "accepted" },
+            ],
+          });
+
+          if (!existingRequest) {
+            throw new Error("Target user is not a connection");
+          }
 
           let chat = await Chat.findOne({
             participants: { $all: [userId, targetUserId] },
@@ -53,8 +64,7 @@ const initializeSocket = (server) => {
 
           await chat.save();
           io.to(roomId).emit("messageReceived", { firstName, lastName, text });
-        } 
-        catch (err) {
+        } catch (err) {
           console.log(err);
         }
       }
