@@ -13,8 +13,16 @@ const getSecretRoomId = (userId, targetUserId) => {
 const initializeSocket = (server) => {
   const io = socket(server, {
     cors: {
-      origin: "http://localhost:5173",
+      origin: [
+        "https://git-together-frontend.vercel.app",
+        "http://localhost:5173",
+      ],
+      methods: ["GET", "POST"],
+      credentials: true,
     },
+    transports: ["websocket", "polling"], // CRITICAL FOR PRODUCTION
+    pingTimeout: 60000,
+    pingInterval: 25000,
   });
 
   io.on("connection", (socket) => {
@@ -33,12 +41,20 @@ const initializeSocket = (server) => {
           console.log(firstName + " " + text);
 
           // Save messages to the database
-          // TODO: Check if userId & targetUserId are friends
+          // Check if userId & targetUserId are friends
           const existingRequest = await Request.findOne({
             $or: [
               // using or for more than 1 cond
-              { fromUserId: userId, toUserId: targetUserId, status: "accepted" },
-              { fromUserId: targetUserId, toUserId: userId, status: "accepted" },
+              {
+                fromUserId: userId,
+                toUserId: targetUserId,
+                status: "accepted",
+              },
+              {
+                fromUserId: targetUserId,
+                toUserId: userId,
+                status: "accepted",
+              },
             ],
           });
 
