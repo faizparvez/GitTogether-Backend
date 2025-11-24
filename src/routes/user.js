@@ -4,7 +4,21 @@ const { userAuth } = require("../middlewares/auth");
 const { Request } = require("../models/request");
 const { User } = require("../models/user");
 
-const user_safedata = "firstName lastName photoURL age gender about skills";
+const user_safedata = `
+  firstName
+  lastName
+  photoURL
+  age
+  gender
+  about
+  skills
+  interests
+  lookingFor
+  location
+  experienceLevel
+  isPremium
+  membershipType
+`;
 
 userRouter.get("/user/requests", userAuth, async (req, res) => {
   try {
@@ -88,7 +102,7 @@ userRouter.get("/user/feed", userAuth, async (req, res) => {
     const validUsers = await User.find({
       $and: [
         { _id: { $nin: Array.from(removeUsers) } }, // "$nin" denotes "not be present in" & "Array.from( removeUsers )" converts a set into an array
-        { _id: { $ne: loggedinuser._id } },         // "$ne" denotes "not equal to"
+        { _id: { $ne: loggedinuser._id } }, // "$ne" denotes "not equal to"
       ],
     })
       .select(user_safedata)
