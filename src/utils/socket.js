@@ -13,10 +13,7 @@ const getSecretRoomId = (userId, targetUserId) => {
 const initializeSocket = (server) => {
   const io = socket(server, {
     cors: {
-      origin: [
-        "https://gitt-together.vercel.app",
-        "http://localhost:5173",
-      ],
+      origin: ["https://gitt-together.vercel.app", "http://localhost:5173"],
       methods: ["GET", "POST"],
       credentials: true,
     },
@@ -79,7 +76,13 @@ const initializeSocket = (server) => {
           });
 
           await chat.save();
-          io.to(roomId).emit("messageReceived", { firstName, lastName, text });
+          io.to(roomId).emit("messageReceived", {
+            senderId: userId,
+            firstName,
+            lastName,
+            text,
+            createdAt: message.createdAt,
+          });
         } catch (err) {
           console.log(err);
         }
