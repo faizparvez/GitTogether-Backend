@@ -31,63 +31,56 @@ const initializeSocket = (server) => {
     });
 
     socket.on(
-      "sendMessage",
-      async ({ firstName, lastName, userId, targetUserId, text }) => {
-        try {
-          const roomId = getSecretRoomId(userId, targetUserId);
-          console.log(firstName + " " + text);
+  "sendMessage",
+  async ({ firstName, lastName, userId, targetUserId, text }) => {
+    try {
+      const roomId = getSecretRoomId(userId, targetUserId);
 
-          // Save messages to the database
-          // Check if userId & targetUserId are friends
-          const existingRequest = await Request.findOne({
-            $or: [
-              // using or for more than 1 cond
-              {
-                fromUserId: userId,
-                toUserId: targetUserId,
-                status: "accepted",
-              },
-              {
-                fromUserId: targetUserId,
-                toUserId: userId,
-                status: "accepted",
-              },
-            ],
-          });
+      const existingRequest = await Request.findOne({
+        $or: [
+          { fromUserId: userId, toUserId: targetUserId, status: "accepted" },
+          { fromUserId: targetUserId, toUserId: userId, status: "accepted" },
+        ],
+      });
 
-          if (!existingRequest) {
-            throw new Error("Target user is not a connection");
-          }
-
-          let chat = await Chat.findOne({
-            participants: { $all: [userId, targetUserId] },
-          });
-
-          if (!chat) {
-            chat = new Chat({
-              participants: [userId, targetUserId],
-              messages: [],
-            });
-          }
-
-          chat.messages.push({
-            senderId: userId,
-            text,
-          });
-
-          await chat.save();
-          io.to(roomId).emit("messageReceived", {
-            senderId: userId,
-            firstName,
-            lastName,
-            text,
-            createdAt: message.createdAt,
-          });
-        } catch (err) {
-          console.log(err);
-        }
+      if (!existingRequest) {
+        throw new Error("Target user is not a connection");
       }
-    );
+
+      let chat = await Chat.findOne({
+        participants: { $all: [userId, targetUserId] },
+      });
+
+      if (!chat) {
+        chat = new Chat({
+          participants: [userId, targetUserId],
+          messages: [],
+        });
+      }
+
+      chat.messages.push({
+        senderId: userId,
+        text,
+      });
+
+      await chat.save();
+
+      // ✅ FIX: Get the saved message WITH timestamp
+      const savedMessage = chat.messages[chat.messages.length - 1];
+
+      io.to(roomId).emit("messageReceived", {
+        senderId: userId,
+        firstName,
+        lastName,
+        text,
+        createdAt: savedMessage.createdAt,
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  }
+);
+
 
     socket.on("disconnect", () => {});
   });
