@@ -14,7 +14,7 @@ const initializeSocket = (server) => {
   const io = socket(server, {
     cors: {
       origin: [
-        "https://git-together-frontend.vercel.app",
+        "https://gitt-together.vercel.app",
         "http://localhost:5173",
       ],
       methods: ["GET", "POST"],
