@@ -1,6 +1,7 @@
 const express = require("express");
 const { userAuth } = require("../middlewares/auth");
 const { Chat } = require("../models/chat");
+const { User } = require("../models/user"); 
 
 const chatRouter = express.Router();
 
@@ -24,10 +25,20 @@ chatRouter.get("/chat/:targetUserId", userAuth, async (req, res) => {
       });
       await chat.save();
     }
-    res.json(chat);
+
+    // Fetch lastSeen from DB
+    const targetUser = await User.findById(targetUserId).select("lastSeen");
+
+    // Send chat + lastSeen to frontend
+    res.json({
+      chat,
+      lastSeen: targetUser?.lastSeen || null,
+    });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ error: "Server error" });
   }
 });
+
 
 module.exports = chatRouter;

@@ -115,4 +115,14 @@ userRouter.get("/user/feed", userAuth, async (req, res) => {
   }
 });
 
+userRouter.get("/user/lastSeen/:userId", async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const user = await User.findById(userId).select("lastSeen");
+    res.json({ lastSeen: user?.lastSeen || null });
+  } catch (err) {
+    res.status(500).json({ error: "Error fetching last seen" });
+  }
+});
+
 module.exports = { userRouter };
