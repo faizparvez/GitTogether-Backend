@@ -2,6 +2,9 @@ const socket = require("socket.io");
 const crypto = require("crypto");
 const { Chat } = require("../models/chat");
 const { Request } = require("../models/request.js");
+const { User } = require("../models/user");
+
+const onlineUsers = new Map(); // userId → socketId
 
 const getSecretRoomId = (userId, targetUserId) => {
   return crypto
@@ -17,7 +20,7 @@ const initializeSocket = (server) => {
       methods: ["GET", "POST"],
       credentials: true,
     },
-    transports: ["websocket", "polling"], // CRITICAL FOR PRODUCTION
+    transports: ["websocket", "polling"], 
     pingTimeout: 60000,
     pingInterval: 25000,
   });
@@ -27,62 +30,96 @@ const initializeSocket = (server) => {
     socket.on("joinChat", ({ firstName, userId, targetUserId }) => {
       const roomId = getSecretRoomId(userId, targetUserId);
       console.log(firstName + " joined Room : " + roomId);
+
+      // Track that this user is currently online
+      onlineUsers.set(userId, socket.id);
+
       socket.join(roomId);
     });
 
     socket.on(
-  "sendMessage",
-  async ({ firstName, lastName, userId, targetUserId, text }) => {
-    try {
-      const roomId = getSecretRoomId(userId, targetUserId);
+      "sendMessage",
+      async ({ firstName, lastName, userId, targetUserId, text }) => {
+        try {
+          const roomId = getSecretRoomId(userId, targetUserId);
 
-      const existingRequest = await Request.findOne({
-        $or: [
-          { fromUserId: userId, toUserId: targetUserId, status: "accepted" },
-          { fromUserId: targetUserId, toUserId: userId, status: "accepted" },
-        ],
-      });
+          const existingRequest = await Request.findOne({
+            $or: [
+              {
+                fromUserId: userId,
+                toUserId: targetUserId,
+                status: "accepted",
+              },
+              {
+                fromUserId: targetUserId,
+                toUserId: userId,
+                status: "accepted",
+              },
+            ],
+          });
 
-      if (!existingRequest) {
-        throw new Error("Target user is not a connection");
+          if (!existingRequest) {
+            throw new Error("Target user is not a connection");
+          }
+
+          let chat = await Chat.findOne({
+            participants: { $all: [userId, targetUserId] },
+          });
+
+          if (!chat) {
+            chat = new Chat({
+              participants: [userId, targetUserId],
+              messages: [],
+            });
+          }
+
+          chat.messages.push({
+            senderId: userId,
+            text,
+          });
+
+          await chat.save();
+
+          // Get the saved message WITH timestamp
+          const savedMessage = chat.messages[chat.messages.length - 1];
+
+          io.to(roomId).emit("messageReceived", {
+            senderId: userId,
+            firstName,
+            lastName,
+            text,
+            createdAt: savedMessage.createdAt,
+          });
+        } catch (err) {
+          console.log(err);
+        }
       }
+    );
 
-      let chat = await Chat.findOne({
-        participants: { $all: [userId, targetUserId] },
-      });
+    socket.on("disconnect", async () => {
+      try {
+        // Find which user disconnected
+        let disconnectedUserId = null;
 
-      if (!chat) {
-        chat = new Chat({
-          participants: [userId, targetUserId],
-          messages: [],
-        });
+        for (const [uid, sid] of onlineUsers.entries()) {
+          if (sid === socket.id) {
+            disconnectedUserId = uid;
+            onlineUsers.delete(uid);
+            break;
+          }
+        }
+
+        // If we know the user → update lastSeen field
+        if (disconnectedUserId) {
+          await User.findByIdAndUpdate(disconnectedUserId, {
+            lastSeen: new Date(),
+          });
+          console.log("Updated lastSeen for user:", disconnectedUserId);
+        }
+      } catch (err) {
+        console.error("Error updating lastSeen:", err);
       }
-
-      chat.messages.push({
-        senderId: userId,
-        text,
-      });
-
-      await chat.save();
-
-      // ✅ FIX: Get the saved message WITH timestamp
-      const savedMessage = chat.messages[chat.messages.length - 1];
-
-      io.to(roomId).emit("messageReceived", {
-        senderId: userId,
-        firstName,
-        lastName,
-        text,
-        createdAt: savedMessage.createdAt,
-      });
-    } catch (err) {
-      console.log(err);
-    }
-  }
-);
-
-
-    socket.on("disconnect", () => {});
+    });
   });
 };
 
