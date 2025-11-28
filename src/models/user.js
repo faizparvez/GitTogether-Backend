@@ -118,6 +118,10 @@ const userSchema = new mongoose.Schema(
         message: "Invalid experience level",
       },
     },
+    lastSeen: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
