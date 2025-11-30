@@ -29,6 +29,9 @@ authRouter.post("/signup", async (req, res) => {
     });
 
     const savedUser = await user.save();
+    await User.findByIdAndUpdate(savedUser._id, {
+      lastSeen: new Date(),
+    });
     const token = jwt.sign({ _id: savedUser._id }, process.env.JWT_SECRET, {
       expiresIn: "8h",
     });
@@ -61,6 +64,9 @@ authRouter.post("/login", async (req, res) => {
       res.cookie("token", token, getCookieOptions());
 
       // res.send("Login Successfull");
+      await User.findByIdAndUpdate(user._id, {
+        lastSeen: new Date(),
+      });
       res.send(user);
     } else {
       throw new Error("Invalid Credentials");
@@ -73,6 +79,16 @@ authRouter.post("/login", async (req, res) => {
 // create cookie which expires now => send the response
 authRouter.post("/logout", async (req, res) => {
   try {
+    // user ID exists only when user is authenticated
+    const { user } = req.body;
+    const userId = user?._id;
+
+    if (userId) {
+      await User.findByIdAndUpdate(userId, {
+        lastSeen: new Date(),
+      });
+    }
+
     res.cookie("token", null, {
       ...getCookieOptions(),
       maxAge: 0, // Expire immediately
